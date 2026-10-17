@@ -1,6 +1,11 @@
-from datetime import datetime, timezone
-
 from app.extensions import db
+
+
+hod_departments = db.Table(
+    "hod_departments",
+    db.Column("user_id", db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("department_id", db.Integer, db.ForeignKey("departments.id", ondelete="CASCADE"), primary_key=True),
+)
 
 
 class Department(db.Model):
@@ -12,7 +17,8 @@ class Department(db.Model):
     description = db.Column(db.Text, nullable=True)
     head_user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now(), onupdate=db.func.now())
 
     head = db.relationship("User", foreign_keys=[head_user_id])
+    hods = db.relationship("User", secondary=hod_departments, back_populates="hod_departments")
