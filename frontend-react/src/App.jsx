@@ -5,47 +5,19 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import ProtectedDemoPage from './pages/ProtectedDemoPage';
+import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
-import { authApi, getApiErrorMessage } from './services/api';
+import { authApi } from './services/api';
 
 function App() {
   const [auth, setAuth] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const college = useMemo(() => collegeData, []);
-
-  useEffect(() => {
-    const token = window.sessionStorage.getItem('sdms_auth_token');
-    if (!token) { setAuthLoading(false); return; }
-    authApi.me()
-      .then((response) => setAuth({ token, user: response.data?.data?.user }))
-      .catch(() => window.sessionStorage.removeItem('sdms_auth_token'))
-      .finally(() => setAuthLoading(false));
-  }, []);
-
-  const setLoginState = (nextState) => {
-    window.sessionStorage.setItem('sdms_auth_token', nextState.token);
-    setAuth(nextState);
-  };
-
-  const logout = async () => {
-    try { await authApi.logout(); } catch { /* local cleanup still occurs */ }
-    window.sessionStorage.removeItem('sdms_auth_token');
-    setAuth(null);
-  };
-
+  useEffect(() => { const token = window.sessionStorage.getItem('sdms_auth_token'); if (!token) { setAuthLoading(false); return; } authApi.me().then((r) => setAuth({ token, user: r.data?.data?.user })).catch(() => window.sessionStorage.removeItem('sdms_auth_token')).finally(() => setAuthLoading(false)); }, []);
+  const setLoginState = (nextState) => { window.sessionStorage.setItem('sdms_auth_token', nextState.token); setAuth(nextState); };
+  const logout = async () => { try { await authApi.logout(); } catch {} window.sessionStorage.removeItem('sdms_auth_token'); setAuth(null); };
   if (authLoading) return <main className="auth-page"><section className="auth-card"><p>Checking authentication…</p></section></main>;
-
-  return <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<HomePage college={college} />} />
-      <Route path="/login" element={<LoginPage college={college} onLogin={setLoginState} />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route element={<ProtectedRoute auth={auth} />}>
-        <Route path="/portal" element={<ProtectedDemoPage auth={auth} onLogout={logout} />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  </BrowserRouter>;
+  const isAdmin = auth?.user?.role === 'ADMIN_PRINCIPAL';
+  return <BrowserRouter><Routes><Route path="/" element={<HomePage college={college} />} /><Route path="/login" element={<LoginPage college={college} onLogin={setLoginState} />} /><Route path="/forgot-password" element={<ForgotPasswordPage />} /><Route element={<ProtectedRoute auth={auth} />}><Route path="/portal" element={isAdmin ? <AdminDashboard auth={auth} onLogout={logout} /> : <ProtectedDemoPage auth={auth} onLogout={logout} />} /></Route><Route path="*" element={<Navigate to="/" replace />} /></Routes></BrowserRouter>;
 }
-
 export default App;

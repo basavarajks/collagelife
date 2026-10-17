@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
-from flask_cors import CORS
 import logging
 
+from app.admin.routes import admin_bp
 from app.api.routes import api_bp
 from app.auth.routes import auth_bp
 from app.extensions import cors, db, migrate
@@ -16,6 +16,7 @@ def create_app(config_object="app.config.Config"):
     cors.init_app(app, resources={r"/api/*": {"origins": [app.config["FRONTEND_ORIGIN"]]}}, supports_credentials=app.config.get("AUTH_USE_COOKIE", False))
     app.register_blueprint(auth_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(admin_bp)
 
     @app.errorhandler(404)
     def not_found(_error):
