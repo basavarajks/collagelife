@@ -1,30 +1,36 @@
-# SDMS Phase 1 Flask Backend
+# Phase 2 authentication and RBAC
 
-This is a **separate Phase 1 backend foundation** added alongside the existing Django backend.
+Phase 2 extends the Phase 1 React/Flask foundation without replacing the existing Flutter or Django applications.
 
-## Key endpoints
+## Backend setup on Windows PowerShell
 
-- `GET /api/v1/api/health`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/forgot-password` (returns not configured)
-- `GET /api/v1/api/protected` (authorization header required)
-- `GET /api/v1/api/principal-only` (Admin/Principal role required)
-
-## Quick start
-
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+```powershell
+cd .\backend-flask
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-cp .env.example .env
+copy .env.example .env
+# Edit .env: set SECRET_KEY and DATABASE_URL (or DB_* values)
 flask --app run.py db upgrade
+flask --app run.py seed-admin
 flask --app run.py run
 ```
 
-## Secure admin seed (local only)
+Start MySQL in XAMPP first and create/select `sdms_db` in phpMyAdmin. Verify the actual MySQL port, username, and password rather than assuming XAMPP defaults. Never edit the XAMPP data directory.
 
-```bash
-flask --app run.py seed-admin
+## Frontend setup
+
+In another PowerShell window:
+
+```powershell
+cd .\frontend-react
+npm install
+copy .env.example .env
+npm run dev
 ```
 
-This command prompts for user ID, name, and password (no default credentials are created).
+Phase 2 uses signed bearer tokens with a server-side token registry so logout revokes the token. The React app keeps the short-lived token in session storage only and reloads the user through `/api/v1/auth/me`; it does not trust a stored role. For production, prefer HTTPS, a secure HttpOnly cookie deployment, and an appropriate CSRF strategy. `AUTH_USE_COOKIE=false` is intended for local development.
+
+Endpoints include `/api/v1/auth/login`, `/logout`, `/me`, `/change-password`, `/api/v1/api/health`, protected examples, and permission/role examples. Password reset remains intentionally unconfigured. `seed-admin` is a local CLI command and never runs automatically.
+
+The migration adds normalized role codes, six role records, permissions, role-permission relationships, audit logs, token revocation records, email, and last-login tracking. No dashboards or SDMS business modules are included in Phase 2.
