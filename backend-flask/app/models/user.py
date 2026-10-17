@@ -20,6 +20,7 @@ class User(db.Model):
     last_login_at = db.Column(db.DateTime, nullable=True)
 
     role = db.relationship("Role", back_populates="users")
+    hod_departments = db.relationship("Department", secondary="hod_departments", back_populates="hods")
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -36,4 +37,5 @@ class User(db.Model):
             "role": self.role.code,
             "role_name": self.role.name,
             "permissions": sorted(permission.code for permission in self.role.permissions),
+            "departments": [{"id": item.id, "code": item.code, "name": item.name} for item in self.hod_departments],
         }
